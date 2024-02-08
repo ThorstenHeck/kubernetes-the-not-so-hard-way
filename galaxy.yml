@@ -1,0 +1,19 @@
+---
+namespace: k8s
+name: tnshw
+version: "1.0.0"
+readme: README.md
+authors:
+  - ThorstenHeck
+description: Ansible Collection in the Namespace k8s named "tnshw" k8s.tnshw = kubernetes-the-not-so-hard-way containing roles to setup a k8s cluster
+license_file: "LICENSE"
+tags:
+  - galaxy
+  - kubernetes
+  - container
+  - application
+dependencies: {}
+repository: https://github.com/ThorstenHeck/kubernetes-the-not-so-hard-way
+documentation: https://github.com/ThorstenHeck/kubernetes-the-not-so-hard-way/blob/main/README.md
+homepage: https://github.com/ThorstenHeck/kubernetes-the-not-so-hard-way
+issues: https://github.com/ThorstenHeck/kubernetes-the-not-so-hard-way/issues

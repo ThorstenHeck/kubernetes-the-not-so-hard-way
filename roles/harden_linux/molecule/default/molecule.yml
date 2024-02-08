@@ -1,0 +1,187 @@
+---
+dependency:
+  name: galaxy
+
+driver:
+  name: vagrant
+  provider:
+    name: libvirt
+    type: libvirt
+
+platforms:
+  - name: test-harden-linux-ubuntu2004-timesyncd
+    box: generic/ubuntu2004
+    memory: 2048
+    cpus: 2
+    groups:
+      - timesyncd
+    interfaces:
+      - auto_config: true
+        network_name: private_network
+        type: static
+        ip: 10.66.66.10
+  - name: test-harden-linux-ubuntu2004-ntp
+    box: generic/ubuntu2004
+    memory: 2048
+    cpus: 2
+    groups:
+      - ntp
+    interfaces:
+      - auto_config: true
+        network_name: private_network
+        type: static
+        ip: 10.66.66.20
+  - name: test-harden-linux-ubuntu2204-openntpd
+    box: generic/ubuntu2204
+    memory: 2048
+    cpus: 2
+    groups:
+      - openntpd
+    interfaces:
+      - auto_config: true
+        network_name: private_network
+        type: static
+        ip: 10.66.66.30
+  - name: test-harden-linux-arch-timesyncd
+    box: archlinux/archlinux
+    memory: 2048
+    cpus: 2
+    groups:
+      - timesyncd
+    interfaces:
+      - auto_config: true
+        network_name: private_network
+        type: static
+        ip: 10.66.66.40
+  - name: test-harden-linux-ubuntu2204-timesyncd
+    box: generic/ubuntu2204
+    memory: 2048
+    cpus: 2
+    groups:
+      - timesyncd
+    interfaces:
+      - auto_config: true
+        network_name: private_network
+        type: static
+        ip: 10.66.66.50
+
+provisioner:
+  name: ansible
+  connection_options:
+    ansible_ssh_user: vagrant
+    ansible_become: true
+  log: true
+  lint:
+    name: ansible-lint
+  inventory:
+    group_vars:
+      all:
+        harden_linux_sshd_settings:
+          "^PasswordAuthentication": "PasswordAuthentication yes"
+          "^X11Forwarding": "X11Forwarding no"
+        harden_linux_sysctl_settings_user:
+          "net.ipv4.ip_forward": 1
+          "net.ipv6.conf.default.forwarding": 1
+          "net.ipv6.conf.all.forwarding": 1
+        harden_linux_ufw_allow_networks:
+          - "10.0.0.0/8"
+          - "172.16.0.0/12"
+          - "192.168.0.0/16"
+        harden_linux_ufw_logging: 'on'
+        harden_linux_ufw_defaults_user:
+          "^DEFAULT_FORWARD_POLICY": 'DEFAULT_FORWARD_POLICY="ACCEPT"'
+        harden_linux_ufw_rules:
+          - rule: "allow"
+            to_port: "22"
+            protocol: "tcp"
+          - rule: "allow"
+            to_port: "80"
+            protocol: "tcp"
+          - rule: "allow"
+            to_port: "443"
+            protocol: "tcp"
+        harden_linux_sshguard_whitelist:
+          - "127.0.0.0/8"
+          - "::1/128"
+          - "10.0.0.0/8"
+    host_vars:
+      test-harden-linux-ubuntu2004-timesyncd:
+        harden_linux_deploy_group: "deployer"
+        harden_linux_deploy_user: "deployer"
+        harden_linux_deploy_user_password: "{{ lookup('file', 'myuserpassword_hash') }}" # mypassword
+        harden_linux_deploy_user_home: "/home/deployer"
+        harden_linux_deploy_user_shell: "/bin/bash"
+        harden_linux_deploy_user_public_keys:
+          - "mykey.pub"
+        harden_linux_ntp: "systemd-timesyncd"
+        harden_linux_ntp_settings:
+          "^#NTP=": "NTP=ntp.ubuntu.com"
+        harden_linux_optional_packages:
+          - mlocate
+      test-harden-linux-ubuntu2004-ntp:
+        harden_linux_deploy_group: "deployer"
+        harden_linux_deploy_user: "deployer"
+        harden_linux_deploy_user_home: "/home/deployer"
+        harden_linux_deploy_user_public_keys:
+          - "mykey.pub"
+        harden_linux_root_password: "{{ lookup('file', 'myuserpassword_hash') }}" # mypassword
+        harden_linux_ntp: "ntp"
+        harden_linux_ntp_settings:
+          "^pool 0": "pool 0.ubuntu.pool.ntp.org iburst"
+          "^pool 1": "pool 1.ubuntu.pool.ntp.org iburst"
+          "^pool 2": "pool 2.ubuntu.pool.ntp.org iburst"
+          "^pool 3": "pool 3.ubuntu.pool.ntp.org iburst"
+        harden_linux_absent_packages:
+          - dosfstools
+      test-harden-linux-ubuntu2204-openntpd:
+        harden_linux_deploy_group: "deployer"
+        harden_linux_deploy_group_gid: "9999"
+        harden_linux_deploy_user: "deployer"
+        harden_linux_deploy_user_uid: "9998"
+        harden_linux_deploy_user_password: "{{ lookup('file', 'myuserpassword_hash') }}" # mypassword
+        harden_linux_deploy_user_home: "/home/deployer"
+        harden_linux_deploy_user_shell: "/bin/bash"
+        harden_linux_ntp: "openntpd"
+        harden_linux_ntp_settings:
+          "^servers 0": "servers 0.debian.pool.ntp.org"
+          "^servers 1": "servers 1.debian.pool.ntp.org"
+          "^servers 2": "servers 2.debian.pool.ntp.org"
+          "^servers 3": "servers 3.debian.pool.ntp.org"
+      test-harden-linux-arch-timesyncd:
+        harden_linux_deploy_group: "deployer"
+        harden_linux_deploy_group_gid: "9999"
+        harden_linux_deploy_user: "deployer"
+        harden_linux_deploy_user_uid: "9998"
+        harden_linux_deploy_user_password: "{{ lookup('file', 'myuserpassword_hash') }}" # mypassword
+        harden_linux_deploy_user_home: "/home/deployer"
+        harden_linux_deploy_user_shell: "/bin/bash"
+        harden_linux_deploy_user_public_keys:
+          - "mykey.pub"
+        harden_linux_root_password: "{{ lookup('file', 'myuserpassword_hash') }}" # mypassword
+        harden_linux_ntp: "systemd-timesyncd"
+        harden_linux_optional_packages:
+          - mlocate
+      test-harden-linux-ubuntu2204-timesyncd:
+        harden_linux_root_password: "{{ lookup('file', 'myuserpassword_hash') }}" # mypassword
+        harden_linux_ntp: "systemd-timesyncd"
+        harden_linux_ntp_settings:
+          "^#NTP=": "NTP=ntp.ubuntu.com"
+        harden_linux_optional_packages:
+          - mlocate
+        harden_linux_systemd_resolved_settings:
+          - DNS=
+          - DNS=9.9.9.9 1.1.1.1 2606:4700:4700::1111 2620:fe::fe
+          - FallbackDNS=
+          - FallbackDNS=149.112.112.112 1.0.0.1 2620:fe::9 2606:4700:4700::1001
+          - DNSOverTLS=
+          - DNSOverTLS=opportunistic
+
+scenario:
+  name: default
+  test_sequence:
+    - prepare
+    - converge
+
+verifier:
+  name: ansible
+  enabled: true

@@ -1,0 +1,77 @@
+---
+  hosts: k8s_ca
+  roles:
+    -
+      role: k8s.tnshw.cfssl
+      tags: role-cfssl
+    -
+      role: k8s.tnshw.kubernetes_ca
+      tags: role-kubernetes-ca
+
+
+- hosts: k8s_kubectl
+  roles:
+    -
+      role: k8s.tnshw.kubectl
+      tags: role-kubectl
+
+-
+  hosts: vpn
+  roles:
+    -
+      role: k8s.tnshw.ansible_role_wireguard
+      tags: role-wireguard
+
+-
+  hosts: k8s_etcd
+  roles:
+    -
+      role: k8s.tnshw.harden_linux
+      tags: role-harden-linux
+    -
+      role: k8s.tnshw.etcd
+      tags: role-etcd
+
+-
+  hosts: k8s_controller
+  roles:
+    -
+      role: k8s.tnshw.harden_linux
+      tags: role-harden-linux
+    -
+      role: k8s.tnshw.kubernetes_controller
+      tags: role-kubernetes-controller
+
+-
+  hosts: k8s_worker
+  roles:
+    -
+      role: k8s.tnshw.harden_linux
+      tags: role-harden-linux
+    -
+      role: k8s.tnshw.cni
+      tags: role-cni
+    -
+      role: k8s.tnshw.runc
+      tags: role-runc
+    -
+      role: k8s.tnshw.containerd
+      tags: role-containerd
+    -
+      role: k8s.tnshw.cilium_kubernetes
+      tags: role-cilium-kubernetes
+    -
+      role: k8s.tnshw.kubernetes_worker
+      tags: role-kubernetes-worker
+
+-
+  hosts: traefik
+  roles:
+    - role: k8s.tnshw.traefik_kubernetes
+      tags: role-traefik-kubernetes
+
+-
+  hosts: cert_manager
+  roles:
+    - role: k8s.tnshw.cert_manager_kubernetes
+      tags: role-cert-manager-kubernetes

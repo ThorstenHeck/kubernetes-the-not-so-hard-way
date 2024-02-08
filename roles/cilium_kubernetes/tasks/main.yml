@@ -1,0 +1,20 @@
+---
+- name: Check if Helm command is installed
+  ansible.builtin.shell: hash helm
+  delegate_to: "{{ cilium_delegate_to }}"
+  run_once: true
+  changed_when: false
+  args:
+    executable: "/bin/bash"
+
+- name: Set action according to cilium_action variable
+  when:
+    - cilium_action is not defined
+  ansible.builtin.set_fact:
+    cilium_action: "template"
+  delegate_to: "{{ cilium_delegate_to }}"
+  run_once: true
+
+- name: Include tasks to execute requested action
+  ansible.builtin.include_tasks:
+    file: "tasks/{{ cilium_action | lower }}.yml"

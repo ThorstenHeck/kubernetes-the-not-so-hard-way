@@ -1,0 +1,86 @@
+---
+- name: Include prerequisites
+  ansible.builtin.include_tasks:
+    file: "tasks/prerequisites.yml"
+
+- name: Render values
+  block:
+    - name: Create temporary file for Helm values
+      ansible.builtin.tempfile:
+        state: file
+        suffix: traefik_values
+      delegate_to: "{{ traefik_delegate_to }}"
+      run_once: true
+      register: traefik__values_tmp_file
+
+    - name: Select values file for Helm template
+      ansible.builtin.template:
+        src: "{{ lookup('first_found', params) }}"
+        dest: "{{ traefik__values_tmp_file.path }}"
+        mode: 0600
+      delegate_to: "{{ traefik_delegate_to }}"
+      run_once: true
+      vars:
+        params:
+          files:
+            - values.yml.j2
+            - values.yaml.j2
+            - traefik_values_default.yml.j2
+          paths:
+            - "{{ traefik_chart_values_directory }}"
+            - templates
+
+    - name: Render template
+      kubernetes.core.helm_template:
+        chart_ref: "{{ traefik_chart_name }}"
+        chart_version: "{{ traefik_chart_version }}"
+        release_namespace: "{{ traefik_namespace }}"
+        update_repo_cache: true
+        values_files:
+          - "{{ traefik__values_tmp_file.path }}"
+      run_once: true
+      delegate_to: "{{ traefik_delegate_to }}"
+      register: traefik__template
+
+    - name: Render template (helm command executed)
+      ansible.builtin.debug:
+        var: traefik__template.command
+      delegate_to: "{{ traefik_delegate_to }}"
+      run_once: true
+      when:
+        - traefik__template is defined
+        - traefik__template.command is defined
+        - traefik_helm_show_commands
+
+    - name: Delete temporary file for Helm values
+      ansible.builtin.file:
+        path: "{{ traefik__values_tmp_file.path }}"
+        state: absent
+      run_once: true
+      delegate_to: "{{ traefik_delegate_to }}"
+      when: traefik__values_tmp_file.path is defined
+
+    - name: Create directory to store template.yml
+      ansible.builtin.file:
+        dest: "{{ traefik_template_output_directory }}"
+        state: directory
+        mode: 0755
+      run_once: true
+      delegate_to: 127.0.0.1
+
+    - name: Write templates to file
+      ansible.builtin.copy:
+        dest: "{{ traefik_template_output_directory }}/template.yml"
+        content: "{{ traefik__template.stdout }}"
+        mode: 0644
+      run_once: true
+      delegate_to: 127.0.0.1
+
+  rescue:
+    - name: Delete temporary file for Helm values
+      ansible.builtin.file:
+        path: "{{ traefik__values_tmp_file.path }}"
+        state: absent
+      run_once: true
+      delegate_to: "{{ traefik_delegate_to }}"
+      when: traefik__values_tmp_file.path is defined

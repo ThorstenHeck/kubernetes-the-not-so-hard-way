@@ -1,0 +1,20 @@
+---
+- name: Add Helm repository
+  when:
+    - cilium__helm_repo_installed.status is not defined
+  kubernetes.core.helm_repository:
+    name: "{{ cilium_repo_name }}"
+    repo_url: "{{ cilium_chart_url }}"
+  delegate_to: "{{ cilium_delegate_to }}"
+  run_once: true
+  register: cilium__helm_add_repo
+
+- name: Add Helm repository (helm command executed)
+  when:
+    - cilium__helm_add_repo is defined
+    - cilium__helm_add_repo.command is defined
+    - cilium_helm_show_commands
+  ansible.builtin.debug:
+    var: cilium__helm_add_repo.command
+  delegate_to: "{{ cilium_delegate_to }}"
+  run_once: true

@@ -1,0 +1,10 @@
+---
+- name: Setup harden_linux role
+  hosts: all
+  remote_user: vagrant
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Include harden_linux role
+      ansible.builtin.include_role:
+        name: githubixx.harden_linux

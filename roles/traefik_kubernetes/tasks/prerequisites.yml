@@ -1,0 +1,49 @@
+---
+- name: Ensure namespace
+  kubernetes.core.k8s:
+    name: "{{ traefik_namespace }}"
+    api_version: v1
+    kind: Namespace
+    state: present
+  delegate_to: "{{ traefik_delegate_to }}"
+  run_once: true
+
+- name: Register if Helm repository is installed
+  kubernetes.core.helm_info:
+    name: traefik
+    release_namespace: traefik
+    release_state:
+      - all
+  register: traefik__helm_repo_installed
+  delegate_to: "{{ traefik_delegate_to }}"
+  run_once: true
+
+- name: Register if Helm repository is installed (helm command executed)
+  ansible.builtin.debug:
+    var: traefik__helm_repo_installed.command
+  delegate_to: "{{ traefik_delegate_to }}"
+  run_once: true
+  when:
+    - traefik__helm_repo_installed is defined
+    - traefik__helm_repo_installed.command is defined
+    - traefik_helm_show_commands
+
+- name: Add Helm repository
+  kubernetes.core.helm_repository:
+    name: "{{ traefik_repo_name }}"
+    repo_url: "{{ traefik_chart_url }}"
+  delegate_to: "{{ traefik_delegate_to }}"
+  run_once: true
+  when:
+    - traefik__helm_repo_installed.status is not defined
+  register: traefik__helm_add_repo
+
+- name: Add Helm repository (helm command executed)
+  ansible.builtin.debug:
+    var: traefik__helm_add_repo.command
+  delegate_to: "{{ traefik_delegate_to }}"
+  run_once: true
+  when:
+    - traefik__helm_add_repo is defined
+    - traefik__helm_add_repo.command is defined
+    - traefik_helm_show_commands
